@@ -101,14 +101,20 @@ export default function LiveAttendance() {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 1280, height: 720 },
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
       });
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
-        setIsCameraActive(true);
-        detectAndMatch();
+        
+        // Wait for video to be ready before starting detection
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => {
+            setIsCameraActive(true);
+            detectAndMatch();
+          }).catch(console.error);
+        };
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
