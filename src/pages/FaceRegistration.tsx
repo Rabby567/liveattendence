@@ -76,12 +76,24 @@ export default function FaceRegistration() {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 },
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
       });
       
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        const video = videoRef.current;
+        video.srcObject = stream;
         streamRef.current = stream;
+        
+        // Wait for video metadata to load
+        await new Promise<void>((resolve, reject) => {
+          video.onloadedmetadata = () => resolve();
+          video.onerror = () => reject(new Error('Video failed to load'));
+          setTimeout(() => resolve(), 3000);
+        });
+        
+        // Explicitly play the video
+        await video.play();
+        
         setIsCameraActive(true);
         detectFaces();
       }
