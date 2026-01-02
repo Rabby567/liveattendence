@@ -40,6 +40,7 @@ export default function FaceRegistration() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
   const [capturedDescriptors, setCapturedDescriptors] = useState<Float32Array[]>([]);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     employeeId: '',
@@ -167,6 +168,17 @@ export default function FaceRegistration() {
     const detection = await detectFace(videoRef.current);
     
     if (detection) {
+      // Capture image from video
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setCapturedImages((prev) => [...prev, imageDataUrl]);
+      }
+      
       setCapturedDescriptors((prev) => [...prev, detection.descriptor]);
       
       toast({
@@ -262,6 +274,7 @@ export default function FaceRegistration() {
 
   const resetCaptures = () => {
     setCapturedDescriptors([]);
+    setCapturedImages([]);
     toast({
       title: 'Captures reset',
       description: 'You can now capture new face images.',
@@ -368,6 +381,30 @@ export default function FaceRegistration() {
                 </Button>
               )}
             </div>
+
+            {/* Captured Thumbnails */}
+            {capturedImages.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-sm text-muted-foreground">Captured Images</span>
+                <div className="flex gap-2 flex-wrap">
+                  {capturedImages.map((img, index) => (
+                    <div
+                      key={index}
+                      className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-primary/20 shadow-sm"
+                    >
+                      <img
+                        src={img}
+                        alt={`Capture ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-primary-foreground text-xs text-center py-0.5">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
