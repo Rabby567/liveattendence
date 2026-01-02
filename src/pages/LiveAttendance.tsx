@@ -105,16 +105,23 @@ export default function LiveAttendance() {
       });
       
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        const video = videoRef.current;
+        video.srcObject = stream;
         streamRef.current = stream;
         
-        // Wait for video to be ready before starting detection
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().then(() => {
-            setIsCameraActive(true);
-            detectAndMatch();
-          }).catch(console.error);
-        };
+        // Set up event listener before play
+        await new Promise<void>((resolve, reject) => {
+          video.onloadedmetadata = () => resolve();
+          video.onerror = () => reject(new Error('Video failed to load'));
+          // Timeout fallback
+          setTimeout(() => resolve(), 3000);
+        });
+        
+        // Explicitly play the video
+        await video.play();
+        
+        setIsCameraActive(true);
+        detectAndMatch();
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
